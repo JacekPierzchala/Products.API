@@ -1,0 +1,39 @@
+﻿@inject FilterContainer FilterContainer;
+
+
+
+@if(FilterContainer.Products!=null)
+{
+<div class="container-fluid table-responsive">
+    <table class="table-striped">
+        <thead>
+            <tr>Test</tr>
+        </thead>
+        <tbody>
+            @foreach (var item in FilterContainer.Products)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                </tr>
+
+            }
+        </tbody>
+    </table>
+</div>
+}
+
+@code {
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FilterContainer.LoadData(false);
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        await FilterContainer.LoadData(false);
+    }
+
+
+}

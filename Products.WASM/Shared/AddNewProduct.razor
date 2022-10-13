@@ -1,0 +1,91 @@
+﻿@inject CategoryAPIService CategoryAPIService
+@inject ProductAPIService ProductAPIService
+
+<div class="modal fade @_modalClass" id="informationalModal" tabindex="-1" aria-labelledby="informationalModal" role="dialog" style="display:@_modalDisplay">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="informationalModal">Add new Product</h5>
+                <button @onclick="CloseModal" type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+
+            <div class="modal-body">
+                <div class="input-group ">
+                    <input placeholder="Product Name:" type="text" class="form-control form-control-lg" @bind="Product.ProductName" />
+                    <input placeholder="Product Code:" type="text" class="form-control form-control-lg" @bind="Product.ProductCode" />
+                </div>
+                <div class="input-group mb-1">
+                    <input placeholder="Description:" type="text" class="form-control form-control-lg" @bind="Product.Description" />
+                </div>
+                <div class="input-group mb-1">
+                    <label>Choose category:</label>
+                    @if(CategoryAPIService.Categories!=null && CategoryId!=null)
+                    {
+                        <select class="form-control ml-2" @bind="CategoryId">
+                            @foreach (var item in CategoryAPIService.Categories)
+                            {
+                                <option value="@item.Id">@item.CategoryName</option>
+                            }        
+                        </select>
+                    }
+                </div>
+                 <button @onclick="Add" type="button" class="btn btn-success">Add</button>
+            </div>
+
+
+        </div>
+    </div>
+
+
+</div>
+
+@code {
+    [Inject]
+    IJSRuntime IJSRuntime { get; set; }
+    [Parameter]
+    public EventCallback ParentMethodToCallOnClickCLose { get; set; }
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+    private string _modalDisplay = null;
+    private string _modalClass = null;
+    private bool _showBackDrop = false;
+    Product Product;
+    Guid CategoryId= Guid.Empty;
+    protected async override Task OnInitializedAsync()
+    {
+        Product = new();
+        await CategoryAPIService.GetAllCategories();
+        CategoryId = CategoryAPIService.Categories.FirstOrDefault().Id;
+        ShowModal();
+    }
+
+    private void ShowModal()
+    {
+        _modalDisplay = "block;";
+        _modalClass = "show";
+        _showBackDrop = true;
+
+    }
+    private void CloseModal()
+    {
+        _modalDisplay = "none;";
+        _modalClass = string.Empty;
+        _showBackDrop = false;
+        ParentMethodToCallOnClickCLose.InvokeAsync();
+    }
+    private async Task Add()
+    {
+        if(string.IsNullOrEmpty(Product.Description) || string.IsNullOrEmpty(Product.ProductName) ||string.IsNullOrEmpty(Product.ProductCode))
+        {
+            await IJSRuntime.InvokeVoidAsync("alert","Complete all mandatory fields!");
+            return;
+        }
+        Product.Active = true;
+        Product.CategoryId = CategoryId;
+        Product.CreatedDate = DateTime.Now;
+        Product.LastModifiedDate = DateTime.Now;
+        await ProductAPIService.AddProduct(Product);
+        await OnSave.InvokeAsync();
+    }
+}
